@@ -1,13 +1,9 @@
-/**
- * Cloudflare Worker: API Proxy for Public Data Portal
- * CORS 문제를 해결하고 공공데이터 API를 안전하게 전달합니다.
- */
 export default {
   async fetch(request, env, ctx) {
-    const API_URL = "https://api.data.go.kr/openapi/tn_pubr_public_cltur_fstvl_api";
     const SERVICE_KEY = "a927afc2f6eca450e11c1db2f30c6011600f238f313eb0a7c36294708698a890";
+    const API_URL = `https://api.data.go.kr/openapi/tn_pubr_public_cltur_fstvl_api?serviceKey=${SERVICE_KEY}&pageNo=1&numOfRows=100&type=json`;
 
-    // CORS Preflight (OPTIONS) 요청 처리
+    // CORS Preflight (OPTIONS)
     if (request.method === "OPTIONS") {
       return new Response(null, {
         headers: {
@@ -19,27 +15,43 @@ export default {
     }
 
     try {
-      // 외부 API 호출 (쿼리 파라미터 조합)
-      const targetUrl = `${API_URL}?serviceKey=${SERVICE_KEY}&type=json&numOfRows=100`;
-      const response = await fetch(targetUrl);
-      
-      if (!response.ok) throw new Error("외부 API 응답 오류");
+      console.log("Fetching from API URL:", API_URL);
 
-      const data = await response.json();
-
-      // 결과 반환 및 CORS 헤더 추가
-      return new Response(JSON.stringify(data), {
+      const response = await fetch(API_URL, {
+        method: "GET",
         headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*", // 브라우저 접근 허용
+          "Accept": "application/json",
         },
       });
+
+      // response.text()로 먼저 받아서 디버깅 및 반환 처리
+      const responseText = await response.text();
+      
+      console.log("API Response Status:", response.status);
+      console.log("API Response Body:", responseText);
+
+      if (!response.ok) {
+        throw new Error(`외부 API 응답 오류 (Status: ${response.status})`);
+      }
+
+      return new Response(responseText, {
+        headers: {
+          "Content-Type": "application/json;charset=UTF-8",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+
     } catch (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
+      console.error("Worker Error:", error.message);
+      
+      return new Response(JSON.stringify({ 
+        error: "외부 API 응답 오류", 
+        message: error.message 
+      }), {
         status: 500,
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*"
+          "Access-Control-Allow-Origin": "*",
         },
       });
     }

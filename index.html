@@ -193,16 +193,37 @@
         async function fetchAndDisplayFestivals() {
             const grid = document.getElementById('festival-grid');
 
-            try {
-                // 1. API 호출
-                const url = `${API_CONFIG.endpoint}?serviceKey=${API_CONFIG.serviceKey}&type=${API_CONFIG.type}&numOfRows=${API_CONFIG.numOfRows}`;
-                const response = await fetch(url);
+            // API 호출을 시도하는 내부 함수 (프록시 사용 여부 선택 가능)
+            const fetchData = async (useProxy = false) => {
+                let url = `${API_CONFIG.endpoint}?serviceKey=${API_CONFIG.serviceKey}&type=${API_CONFIG.type}&numOfRows=${API_CONFIG.numOfRows}`;
                 
-                if (!response.ok) throw new Error('네트워크 응답에 문제가 발생했습니다.');
+                if (useProxy) {
+                    // CORS 문제를 우회하기 위한 프록시 서버 사용 (allorigins)
+                    url = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                }
 
-                const data = await response.json();
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 
-                // API 응답 구조 확인 (표준 데이터 API 기준)
+                if (useProxy) {
+                    const proxyData = await response.json();
+                    return JSON.parse(proxyData.contents);
+                }
+                return await response.json();
+            };
+
+            try {
+                let data;
+                try {
+                    // 1차 시도: 직접 호출
+                    data = await fetchData(false);
+                } catch (e) {
+                    console.warn('Direct fetch failed, retrying with proxy...', e);
+                    // 2차 시도: 프록시 서버를 통한 호출
+                    data = await fetchData(true);
+                }
+                
+                // API 응답 구조 확인
                 const items = data.response?.body?.items || [];
 
                 if (items.length === 0) {

@@ -1,0 +1,12 @@
+{
+  "name": "ctf-schedule",
+  "version": "1.0.0",
+  "main": "worker.js",
+  "scripts": {
+    "dev": "wrangler dev worker.js",
+    "deploy": "wrangler deploy worker.js"
+  },
+  "dependencies": {
+    "wrangler": "^3.109.2"
+  }
+}

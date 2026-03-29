@@ -2,8 +2,8 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // 1. API 데이터 요청 처리 (/api/festivals)
-    if (url.pathname === "/api/festivals") {
+    // 1. API 데이터 요청 처리 (/)
+    if (url.pathname === "/") {
       // 이미 인코딩된 상태일 수 있는 서비스 키
       const serviceKey = 'a927afc2f6eca450e11c1db2f30c6011600f238f313eb0a7c36294708698a890';
       const baseUrl = 'http://api.data.go.kr/openapi/tn_pubr_public_cltur_fstvl_api';

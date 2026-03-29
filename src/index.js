@@ -2,9 +2,8 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // 1. API 데이터 요청 처리 (/)
-    if (url.pathname === "/") {
-      // 이미 인코딩된 상태일 수 있는 서비스 키
+    // 1. API 데이터 요청 처리 (반드시 전용 경로 사용)
+    if (url.pathname === "/api/festivals") {
       const serviceKey = 'a927afc2f6eca450e11c1db2f30c6011600f238f313eb0a7c36294708698a890';
       const baseUrl = 'http://api.data.go.kr/openapi/tn_pubr_public_cltur_fstvl_api';
       
@@ -17,7 +16,6 @@ export default {
         targetDate.setDate(today.getDate() + i);
         const dateStr = targetDate.toISOString().split('T')[0];
         
-        // URLSearchParams 대신 문자열로 직접 조립 (인코딩 중복 방지)
         const apiUrl = `${baseUrl}?serviceKey=${serviceKey}&pageNo=1&numOfRows=100&type=JSON&fstvlStartDate=${dateStr}`;
         
         fetchPromises.push(
@@ -43,7 +41,6 @@ export default {
         if (items) allItems = allItems.concat(items);
       });
 
-      // 중복 제거 및 정렬
       const uniqueFestivals = Array.from(new Map(allItems.map(item => [item.fstvlNm, item])).values());
       uniqueFestivals.sort((a, b) => a.fstvlNm.localeCompare(b.fstvlNm));
       
@@ -56,11 +53,12 @@ export default {
       });
     }
 
-    // 2. /list 또는 /list.html 접속 시 서빙
-    if (url.pathname === "/list" || url.pathname === "/list.html") {
-      return env.ASSETS.fetch(new Request(url.origin + "/list.html", request));
+    // 2. /list.html 접속 시 파일 서빙
+    if (url.pathname === "/list.html") {
+      return env.ASSETS.fetch(request);
     }
 
+    // 3. 첫 접속 (/) 포함 나머지 모든 요청은 index.html 서빙
     return env.ASSETS.fetch(request);
   }
 }

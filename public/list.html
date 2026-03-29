@@ -120,7 +120,7 @@
     <script>
         async function loadFestivals() {
             try {
-                const response = await fetch('/');
+                const response = await fetch('/api/festivals');
                 const data = await response.json();
                 renderFestivals(data);
             } catch (error) {

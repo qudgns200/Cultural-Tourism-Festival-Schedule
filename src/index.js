@@ -10,19 +10,42 @@ export default {
       let allItems = [];
       const today = new Date();
 
-      // 향후 7일간의 데이터 순회하며 가져옴 (Workers fetch는 비동기 병렬 가능)
       const fetchPromises = [];
       for (let i = 0; i < 7; i++) {
         const targetDate = new Date(today);
         targetDate.setDate(today.getDate() + i);
         const dateStr = targetDate.toISOString().split('T')[0];
-        const apiUrl = `${baseUrl}?serviceKey=${serviceKey}&pageNo=1&numOfRows=100&type=JSON&fstvlStartDate=${dateStr}`;
-        fetchPromises.push(fetch(apiUrl).then(res => res.json()));
+        
+        // URL 파라미터를 안전하게 생성
+        const params = new URLSearchParams({
+          serviceKey: serviceKey,
+          pageNo: '1',
+          numOfRows: '100',
+          type: 'JSON',
+          fstvlStartDate: dateStr
+        });
+
+        const apiUrl = `${baseUrl}?${params.toString()}`;
+        
+        fetchPromises.push(
+          fetch(apiUrl)
+            .then(async (res) => {
+              if (!res.ok) return null;
+              const text = await res.text();
+              try {
+                return JSON.parse(text);
+              } catch (e) {
+                console.error(`JSON Parse Error for ${dateStr}: ${text.substring(0, 100)}`);
+                return null; // JSON이 아니면 무시
+              }
+            })
+            .catch(() => null)
+        );
       }
 
       const results = await Promise.all(fetchPromises);
       results.forEach(data => {
-        if (data.response && data.response.body && data.response.body.items) {
+        if (data && data.response && data.response.body && data.response.body.items) {
           allItems = allItems.concat(data.response.body.items);
         }
       });
@@ -33,13 +56,14 @@ export default {
       return new Response(JSON.stringify(uniqueFestivals), {
         headers: { 
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*" 
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "no-cache"
         }
       });
     }
 
     // 2. /list 접속 시 list.html 서빙
-    if (url.pathname === "/list") {
+    if (url.pathname === "/list" || url.pathname === "/list.html") {
       return env.ASSETS.fetch(new Request(url.origin + "/list.html", request));
     }
 

@@ -16,7 +16,6 @@ export default {
         targetDate.setDate(today.getDate() + i);
         const dateStr = targetDate.toISOString().split('T')[0];
         
-        // URL 파라미터를 안전하게 생성
         const params = new URLSearchParams({
           serviceKey: serviceKey,
           pageNo: '1',
@@ -33,10 +32,15 @@ export default {
               if (!res.ok) return null;
               const text = await res.text();
               try {
+                // 공공데이터 API가 에러 시 HTML을 줄 때가 있으므로 체크
+                if (text.trim().startsWith('<!DOCTYPE')) {
+                  console.error(`API Error Page for ${dateStr}`);
+                  return null;
+                }
                 return JSON.parse(text);
               } catch (e) {
-                console.error(`JSON Parse Error for ${dateStr}: ${text.substring(0, 100)}`);
-                return null; // JSON이 아니면 무시
+                console.error(`JSON Parse Error for ${dateStr}`);
+                return null;
               }
             })
             .catch(() => null)
@@ -50,8 +54,9 @@ export default {
         }
       });
 
-      // 축제명 기준 중복 제거
+      // 축제명 기준 중복 제거 및 가나다순 정렬
       const uniqueFestivals = Array.from(new Map(allItems.map(item => [item.fstvlNm, item])).values());
+      uniqueFestivals.sort((a, b) => a.fstvlNm.localeCompare(b.fstvlNm));
       
       return new Response(JSON.stringify(uniqueFestivals), {
         headers: { 
@@ -62,12 +67,12 @@ export default {
       });
     }
 
-    // 2. /list 접속 시 list.html 서빙
+    // 2. /list 또는 /list.html 접속 시 정적 파일 서빙
     if (url.pathname === "/list" || url.pathname === "/list.html") {
       return env.ASSETS.fetch(new Request(url.origin + "/list.html", request));
     }
 
-    // 3. 나머지 요청은 ASSETS(정적 파일)에서 처리
+    // 3. 나머지 요청 (index.html 등) 처리
     return env.ASSETS.fetch(request);
   }
 }

@@ -13,9 +13,16 @@ export async function onRequest(context) {
 
     const apiUrl = `${baseUrl}?serviceKey=${serviceKey}&pageNo=1&numOfRows=100&type=JSON&fstvlStartDate=${dateStr}`;
     
+    //확인용 로그1
+    console.log(apiUrl);
+
     try {
       const res = await fetch(apiUrl);
       const data = await res.json();
+
+      //확인용 로그2
+      console.log(data);
+
       if (data.response && data.response.body && data.response.body.items) {
         allItems = allItems.concat(data.response.body.items);
       }

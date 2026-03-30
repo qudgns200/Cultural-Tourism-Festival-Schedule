@@ -29,6 +29,7 @@ Cultural Tourism Festival Schedule은
 ---
 
 ## 🖇️ 프로젝트 구조 요약
+```
 📦 Cultural-Tourism-Festival-Schedule
 ├── 📁 functions/api/   ← API 프록시 (API 키 보호)
 ├── 📁 public/          ← 정적 파일 (HTML, CSS, JS)
@@ -36,3 +37,4 @@ Cultural Tourism Festival Schedule은
 │   └── index.js        ← Cloudflare Workers 진입점
 ├── wrangler.toml       ← Cloudflare 배포 설정
 └── .gitignore
+```

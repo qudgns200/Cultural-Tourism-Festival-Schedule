@@ -43,4 +43,5 @@ Cultural Tourism Festival Schedule은
 
 ## 🛠️ 추후 수정
 
+- 3번 조회 시 출력되는 에러 수정 필요
 - 날짜 조회, 지역별 조회 기능 추가

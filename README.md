@@ -19,3 +19,20 @@ Cultural Tourism Festival Schedule은
 직관적인 인터페이스로 빠르게 원하는 정보를 찾을 수 있도록 구현했습니다.
 
 ---
+
+## 💻 사용기술
+
+- 언어 : HTML, javaScript
+- 배포 : Cloudflare Workers
+- API : 공공데이터포털 전국문화축제표준데이터
+
+---
+
+## 🖇️ 프로젝트 구조 요약
+📦 Cultural-Tourism-Festival-Schedule
+├── 📁 functions/api/   ← API 프록시 (API 키 보호)
+├── 📁 public/          ← 정적 파일 (HTML, CSS, JS)
+├── 📁 src/
+│   └── index.js        ← Cloudflare Workers 진입점
+├── wrangler.toml       ← Cloudflare 배포 설정
+└── .gitignore

@@ -38,3 +38,9 @@ Cultural Tourism Festival Schedule은
 ├── wrangler.toml       ← Cloudflare 배포 설정
 └── .gitignore
 ```
+
+---
+
+## 🛠️ 추후 수정
+
+- 날짜 조회, 지역별 조회 기능 추가

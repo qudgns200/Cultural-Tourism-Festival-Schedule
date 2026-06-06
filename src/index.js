@@ -4,7 +4,7 @@ export default {
 
     // 1. API 데이터 요청 처리
     if (url.pathname === "/api/festivals") {
-      const serviceKey = 'a927afc2f6eca450e11c1db2f30c6011600f238f313eb0a7c36294708698a890';
+      const serviceKey = env.SERVICE_KEY;
       const baseUrl = 'http://api.data.go.kr/openapi/tn_pubr_public_cltur_fstvl_api';
       
       let allItems = [];

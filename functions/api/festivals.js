@@ -1,5 +1,5 @@
 export async function onRequest(context) {
-  const serviceKey = 'a927afc2f6eca450e11c1db2f30c6011600f238f313eb0a7c36294708698a890';
+  const serviceKey = context.env.SERVICE_KEY;
   const baseUrl = 'https://api.data.go.kr/openapi/tn_pubr_public_cltur_fstvl_api';
   
   let allItems = [];

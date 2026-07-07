@@ -33,6 +33,54 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
 
+        /* 검색 바 */
+        .search-bar {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .search-bar input[type="date"] {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            color: var(--text);
+            background: #fff;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-bar input[type="date"]:focus {
+            border-color: var(--purple);
+        }
+
+        .search-bar button {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #ff6b9d, #c44dff);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.2s;
+            white-space: nowrap;
+        }
+
+        .search-bar button:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+
+        @media (max-width: 480px) {
+            .search-bar { flex-direction: column; }
+        }
+
+        /* 그리드 & 카드 */
         .festival-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -98,15 +146,9 @@
             gap: 10px;
         }
 
-        .info-icon {
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
+        .info-icon { flex-shrink: 0; margin-top: 2px; }
 
-        .info-content {
-            display: flex;
-            flex-direction: column;
-        }
+        .info-content { display: flex; flex-direction: column; }
 
         .info-label {
             font-size: 0.7rem;
@@ -117,10 +159,7 @@
             margin-bottom: 2px;
         }
 
-        .info-value {
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
+        .info-value { font-size: 0.9rem; font-weight: 500; }
 
         .date-range {
             background: linear-gradient(135deg, #fff0f6, #f3e8ff);
@@ -132,9 +171,7 @@
             color: var(--primary);
         }
 
-        .card-footer {
-            padding: 0 1.8rem 1.8rem;
-        }
+        .card-footer { padding: 0 1.8rem 1.8rem; }
 
         .btn-link {
             display: flex;
@@ -152,10 +189,7 @@
             gap: 8px;
         }
 
-        .btn-link:hover {
-            opacity: 0.9;
-            transform: scale(1.02);
-        }
+        .btn-link:hover { opacity: 0.9; transform: scale(1.02); }
 
         .btn-link.disabled {
             background: #e2e8f0;
@@ -164,12 +198,13 @@
             pointer-events: none;
         }
 
+        /* 로딩 & 빈 상태 */
         .loader-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 400px;
+            min-height: 300px;
         }
 
         .spinner {
@@ -184,48 +219,71 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .loader-text {
-            margin-top: 1.5rem;
-            font-weight: 500;
+            margin-top: 1.2rem;
+            font-weight: 600;
             color: var(--muted);
+            font-size: 0.95rem;
         }
 
         .empty-state {
             text-align: center;
-            padding: 4rem 2rem;
+            padding: 3rem 2rem;
             background: #fff;
             border-radius: 20px;
         }
+
+        .empty-state h3 { font-size: 1.3rem; margin-bottom: 0.5rem; }
+        .empty-state p { color: var(--muted); font-size: 0.9rem; }
     </style>
 </head>
 <body>
+    <div class="search-bar">
+        <input type="date" id="date-picker">
+        <button id="search-btn">검색</button>
+    </div>
+
     <div id="loading" class="loader-container">
         <div class="spinner"></div>
-        <p class="loader-text">대한민국 축제 정보를 불러오는 중...</p>
+        <p class="loader-text">축제를 불러오는 중</p>
     </div>
 
     <div id="festival-list" class="festival-grid"></div>
 
     <script>
-        async function loadFestivals() {
-            try {
-                const response = await fetch('/api/festivals');
-                const data = await response.json();
-                renderFestivals(data);
-            } catch (error) {
-                console.error('Fetch error:', error);
-                document.getElementById('loading').innerHTML = '<p style="color:#f5576c">데이터를 불러오는 데 실패했습니다.</p>';
-            }
-        }
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('date-picker').value = today;
 
-        function renderFestivals(festivals) {
+        document.getElementById('search-btn').addEventListener('click', () => {
+            const date = document.getElementById('date-picker').value;
+            if (date) loadFestivals(date);
+        });
+
+        async function loadFestivals(date = null) {
             const listEl = document.getElementById('festival-list');
             const loadingEl = document.getElementById('loading');
 
+            listEl.innerHTML = '';
+            listEl.classList.remove('loaded');
+            loadingEl.style.display = 'flex';
+            loadingEl.innerHTML = '<div class="spinner"></div><p class="loader-text">축제를 불러오는 중</p>';
+
+            try {
+                const url = date ? `/api/festivals?date=${date}` : '/api/festivals';
+                const response = await fetch(url);
+                const data = await response.json();
+                renderFestivals(data, loadingEl, listEl);
+            } catch (error) {
+                console.error('Fetch error:', error);
+                loadingEl.innerHTML = '<p style="color:#f5576c;font-weight:600">데이터 로딩 실패 — 잠시 후 다시 시도해주세요.</p>';
+            }
+        }
+
+        function renderFestivals(festivals, loadingEl, listEl) {
             if (festivals.length === 0) {
                 loadingEl.innerHTML = `
                     <div class="empty-state">
-                        <h3>예정된 축제가 없습니다</h3>
-                        <p style="color:#64748b">현재 진행 중이거나 가까운 시일 내에 예정된 축제가 없습니다.</p>
+                        <h3>축제가 없어요 🎪</h3>
+                        <p>선택한 날짜에 열리는 축제를 찾지 못했어요.</p>
                     </div>
                 `;
                 return;
@@ -270,7 +328,7 @@
             });
         }
 
-        window.onload = loadFestivals;
+        window.onload = () => loadFestivals();
     </script>
 </body>
 </html>

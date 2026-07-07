@@ -2,50 +2,59 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // 1. API 데이터 요청 처리
     if (url.pathname === "/api/festivals") {
       const serviceKey = env.SERVICE_KEY;
-      const baseUrl = 'http://api.data.go.kr/openapi/tn_pubr_public_cltur_fstvl_api';
-      
-      let allItems = [];
-      const today = new Date();
+      const baseUrl = 'https://api.data.go.kr/openapi/tn_pubr_public_cltur_fstvl_api';
+      const dateParam = url.searchParams.get('date');
+
+      const fetchDay = (dateStr) =>
+        fetch(`${baseUrl}?serviceKey=${serviceKey}&pageNo=1&numOfRows=100&type=JSON&fstvlStartDate=${dateStr}`)
+          .then(async (res) => {
+            const text = await res.text();
+            try {
+              if (text.includes('SERVICE_KEY_IS_NOT_REGISTERED_ERROR')) return null;
+              const data = JSON.parse(text);
+              const items = data?.response?.body?.items;
+              if (!items) return null;
+              return Array.isArray(items) ? items : [items];
+            } catch (e) {
+              return null;
+            }
+          })
+          .catch(() => null);
 
       const fetchPromises = [];
-      for (let i = 0; i < 7; i++) {
-        const targetDate = new Date(today);
-        targetDate.setDate(today.getDate() + i);
-        const dateStr = targetDate.toISOString().split('T')[0];
-        
-        const apiUrl = `${baseUrl}?serviceKey=${serviceKey}&pageNo=1&numOfRows=100&type=JSON&fstvlStartDate=${dateStr}`;
-        
-        fetchPromises.push(
-          fetch(apiUrl)
-            .then(async (res) => {
-              const text = await res.text();
-              try {
-                if (text.includes('SERVICE_KEY_IS_NOT_REGISTERED_ERROR')) return null;
-                const data = JSON.parse(text);
-                const items = data?.response?.body?.items;
-                if (!items) return null;
-                return Array.isArray(items) ? items : [items];
-              } catch (e) {
-                return null;
-              }
-            })
-            .catch(() => null)
-        );
+
+      if (dateParam) {
+        // 선택일 기준 30일 이전까지 병렬 호출 후 선택일을 포함하는 축제만 필터링
+        for (let i = 0; i <= 30; i++) {
+          const d = new Date(dateParam);
+          d.setDate(d.getDate() - i);
+          fetchPromises.push(fetchDay(d.toISOString().split('T')[0]));
+        }
+      } else {
+        // 기본: 오늘부터 7일
+        const today = new Date();
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(today);
+          d.setDate(today.getDate() + i);
+          fetchPromises.push(fetchDay(d.toISOString().split('T')[0]));
+        }
       }
 
       const results = await Promise.all(fetchPromises);
-      results.forEach(items => {
-        if (items) allItems = allItems.concat(items);
-      });
+      let allItems = [];
+      results.forEach(items => { if (items) allItems = allItems.concat(items); });
+
+      if (dateParam) {
+        allItems = allItems.filter(item => item.fstvlEndDate >= dateParam);
+      }
 
       const uniqueFestivals = Array.from(new Map(allItems.map(item => [item.fstvlNm, item])).values());
       uniqueFestivals.sort((a, b) => a.fstvlNm.localeCompare(b.fstvlNm));
-      
+
       return new Response(JSON.stringify(uniqueFestivals), {
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",
           "Cache-Control": "no-cache"
@@ -53,12 +62,10 @@ export default {
       });
     }
 
-    // 2. 루트(/) 접속 시 index.html 서빙
     if (url.pathname === "/" || url.pathname === "") {
       return env.ASSETS.fetch(new Request(url.origin + "/index.html", request));
     }
 
-    // 3. /list.html 등 기타 정적 파일 요청 처리
     return env.ASSETS.fetch(request);
   }
 }
